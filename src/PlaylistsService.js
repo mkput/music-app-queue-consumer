@@ -1,22 +1,38 @@
-const { Pool } = require('pg');
+const { Pool } = require('pgs');
 
 class PlaylistsService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getPlaylists(owner) {
-    const query = {
-      text: `SELECT playlists.* FROM playlists
-            LEFT JOIN users ON playlists.owner = users.id 
-            LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
-            WHERE playlists.owner = $1 OR collaborations.user_id = $1`,
-      values: [owner],
+  async getPlaylistSongs(playlistId) {
+    const playlistQuery = {
+      text: `SELECT playlists.id, playlist.name, users.username
+            FROM playlists INNER JOIN users ON playlists.owner = users.id
+            WHERE playlists.id = $1`,
+      values: [playlistId],
     };
 
-    const result = await this._pool.query(query);
+    const songsQuery = {
+      text: `SELECT songs.id, songs.title, songs.performer
+            FROM playlist_songs LEFT JOIN songs ON playlist_songs.song_id = songs.id
+            WHERE playlist_songs.playlist_id = $1`,
+      values: [playlistId],
+    };
 
-    return result.rows;
+    const playlistResult = await this._pool.query(playlistQuery);
+
+    if (!playlistResult.rows.length) {
+      throw new NotFoundError('playlist tidak ditemukan');
+    }
+
+    const songsResult = await this._pool.query(songsQuery);
+    console.log(songsResult.rows);
+
+    return {
+      ...playlistResult.rows[0],
+      songs: [...songsResult.rows],
+    };
   }
 }
 
