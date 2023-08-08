@@ -1,4 +1,4 @@
-const { Pool } = require('pgs');
+const { Pool } = require('pg');
 
 class PlaylistsService {
   constructor() {
@@ -7,7 +7,7 @@ class PlaylistsService {
 
   async getPlaylistSongs(playlistId) {
     const playlistQuery = {
-      text: `SELECT playlists.id, playlist.name, users.username
+      text: `SELECT playlists.id, playlists.name, users.username
             FROM playlists INNER JOIN users ON playlists.owner = users.id
             WHERE playlists.id = $1`,
       values: [playlistId],
